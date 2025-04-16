@@ -32,28 +32,18 @@ def save_json(filepath, data):
         json.dump(data, f, indent=2)
 
 def generate_video_thumbnail(video_path, thumb_path):
-    """
-    Generates a video thumbnail by:
-      - Extracting a frame at half the video's duration (or 0.1 sec for very short videos)
-      - Converting the frame to a PIL image
-      - Converting to RGB if needed
-      - Resizing the image to a width of 320px (maintaining aspect ratio) using Resampling.LANCZOS
-      - Saving the image as a JPEG thumbnail at thumb_path
-    """
     clip = VideoFileClip(video_path)
     timestamp = clip.duration / 2 if clip.duration > 1 else 0.1
     frame = clip.get_frame(timestamp)
     image = Image.fromarray(frame)
     if image.mode != "RGB":
         image = image.convert("RGB")
-    
-    # Resize the image to a thumbnail of width 320px while maintaining the aspect ratio
+
     thumb_width = 320
     wpercent = thumb_width / float(image.size[0])
     thumb_height = int(float(image.size[1]) * wpercent)
-    # Use the updated Resampling.LANCZOS for high-quality downsampling
     image = image.resize((thumb_width, thumb_height), Image.Resampling.LANCZOS)
-    
+
     image.save(thumb_path, format="JPEG")
     clip.close()
 
@@ -64,7 +54,7 @@ def index():
 
     descriptions = load_json(DESCRIPTION_FILE)
     albums = load_json(ALBUM_FILE)
-    comments = load_json(COMMENTS_FILE)  # Load comments for each file if available
+    comments = load_json(COMMENTS_FILE)
 
     image_files = os.listdir(upload_folder)
     image_files.sort(key=lambda x: os.path.getmtime(os.path.join(upload_folder, x)), reverse=True)
@@ -114,8 +104,9 @@ def upload():
                 else:
                     file.save(save_path)
 
-                # Generate video thumbnail if applicable
+                # ✅ Ensure the thumbnail directory exists before generating
                 if ext in {"mp4", "mov", "avi", "mkv"}:
+                    os.makedirs(THUMB_FOLDER, exist_ok=True)
                     thumb_path = os.path.join(THUMB_FOLDER, f"{filename.rsplit('.', 1)[0]}.jpg")
                     try:
                         generate_video_thumbnail(save_path, thumb_path)
