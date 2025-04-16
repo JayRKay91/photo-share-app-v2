@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pillow_heif
-from moviepy.video.io.VideoFileClip import VideoFileClip  # Updated import for Render compatibility
+from moviepy.video.io.VideoFileClip import VideoFileClip
 
 main = Blueprint("main", __name__)
 
@@ -13,8 +13,8 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "bmp", "webp", "heic", "mp4",
 
 DESCRIPTION_FILE = "descriptions.json"
 ALBUM_FILE = "albums.json"
-COMMENTS_FILE = "comments.json"  # For commenting feature
-THUMB_FOLDER = os.path.join("static", "thumbnails")
+COMMENTS_FILE = "comments.json"
+THUMB_FOLDER = os.path.join("app", "static", "thumbnails")  # Updated path for Render
 
 os.makedirs(THUMB_FOLDER, exist_ok=True)
 
@@ -38,12 +38,7 @@ def generate_video_thumbnail(video_path, thumb_path):
     image = Image.fromarray(frame)
     if image.mode != "RGB":
         image = image.convert("RGB")
-
-    thumb_width = 320
-    wpercent = thumb_width / float(image.size[0])
-    thumb_height = int(float(image.size[1]) * wpercent)
-    image = image.resize((thumb_width, thumb_height), Image.Resampling.LANCZOS)
-
+    image = image.resize((320, int(image.size[1] * (320 / image.size[0]))), Image.Resampling.LANCZOS)
     image.save(thumb_path, format="JPEG")
     clip.close()
 
@@ -104,10 +99,11 @@ def upload():
                 else:
                     file.save(save_path)
 
-                # ✅ Ensure the thumbnail directory exists before generating
+                # ✅ Ensure thumbnails folder and generate thumbnail
                 if ext in {"mp4", "mov", "avi", "mkv"}:
                     os.makedirs(THUMB_FOLDER, exist_ok=True)
-                    thumb_path = os.path.join(THUMB_FOLDER, f"{filename.rsplit('.', 1)[0]}.jpg")
+                    thumb_filename = f"{filename.rsplit('.', 1)[0]}.jpg"
+                    thumb_path = os.path.join(THUMB_FOLDER, thumb_filename)
                     try:
                         generate_video_thumbnail(save_path, thumb_path)
                     except Exception as e:
