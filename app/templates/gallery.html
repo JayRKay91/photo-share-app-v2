@@ -18,6 +18,7 @@
             height: auto;
             cursor: pointer;
         }
+
         .action-buttons {
             margin-top: 10px;
         }
@@ -80,6 +81,19 @@
             padding: 10px 15px;
             pointer-events: none;
         }
+
+        .tags {
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin: 2px;
+        }
     </style>
 </head>
 <body>
@@ -113,12 +127,28 @@
                      onclick="openPreview(this.src)"
                      onerror="handleThumbnailError(this, this.src, '{{ image.filename }}')">
             {% endif %}
+
             {% if image.album %}<p>📁 Album: {{ image.album }}</p>{% endif %}
+
             <form action="{{ url_for('main.update_description', filename=image.filename) }}" method="POST">
                 <textarea name="description" rows="2" cols="25" placeholder="Add a description...">{{ image.description }}</textarea>
                 <br>
                 <button type="submit">💾 Save</button>
             </form>
+
+            <div class="tags">
+                {% if image.tags %}
+                    <strong>Tags:</strong>
+                    {% for tag in image.tags %}
+                        <span class="tag">📌 {{ tag }}</span>
+                    {% endfor %}
+                {% endif %}
+                <form action="{{ url_for('main.add_tag', filename=image.filename) }}" method="POST" style="margin-top: 5px;">
+                    <input type="text" name="tag" placeholder="Add tag..." maxlength="30" style="width: 80%;">
+                    <button type="submit">➕</button>
+                </form>
+            </div>
+
             <div class="action-buttons">
                 <a href="{{ url_for('main.download_image', filename=image.filename) }}">
                     <button>⬇️ Download</button>
