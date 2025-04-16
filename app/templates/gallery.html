@@ -22,15 +22,6 @@
             margin-top: 10px;
         }
 
-        .filename {
-            max-width: 250px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin: 5px auto;
-            font-size: 0.9em;
-        }
-
         #preview {
             display: none;
             position: fixed;
@@ -111,16 +102,17 @@
             {% if image.type == 'video' %}
                 <div class="video-wrapper">
                     <img src="{{ url_for('static', filename=image.thumb) }}"
+                         alt="{{ image.filename }}"
                          onclick="openPreview('{{ url_for('static', filename='uploads/' + image.filename) }}', true)"
-                         alt="{{ image.filename }}">
+                         onerror="handleThumbnailError(this, '{{ url_for('static', filename='uploads/' + image.filename) }}', '{{ image.filename }}')">
                     <div class="play-overlay">&#9658;</div>
                 </div>
             {% else %}
                 <img src="{{ url_for('static', filename='uploads/' + image.filename) }}"
+                     alt="{{ image.filename }}"
                      onclick="openPreview(this.src)"
-                     alt="{{ image.filename }}">
+                     onerror="handleThumbnailError(this, this.src, '{{ image.filename }}')">
             {% endif %}
-            <p class="filename">{{ image.filename }}</p>
             {% if image.album %}<p>📁 Album: {{ image.album }}</p>{% endif %}
             <form action="{{ url_for('main.update_description', filename=image.filename) }}" method="POST">
                 <textarea name="description" rows="2" cols="25" placeholder="Add a description...">{{ image.description }}</textarea>
@@ -188,6 +180,16 @@
             const preview = document.getElementById('preview');
             preview.innerHTML = '';
             preview.style.display = 'none';
+        }
+
+        function handleThumbnailError(imgElement, fallbackUrl, filename) {
+            const link = document.createElement('a');
+            link.href = fallbackUrl;
+            link.textContent = filename;
+            link.target = "_blank";
+
+            const parent = imgElement.parentNode;
+            parent.replaceChild(link, imgElement);
         }
 
         document.addEventListener('keydown', function(event) {
