@@ -146,6 +146,35 @@ def add_tag(filename):
         flash("Empty tag not added.")
     return redirect(url_for("main.index"))
 
+@main.route("/tag/<tagname>")
+def filter_by_tag(tagname):
+    upload_folder = current_app.config["UPLOAD_FOLDER"]
+    descriptions = load_json(DESCRIPTION_FILE)
+    albums = load_json(ALBUM_FILE)
+    comments = load_json(COMMENTS_FILE)
+    tags = load_json(TAGS_FILE)
+
+    tagname = tagname.strip().lower()
+    filtered_files = [f for f, taglist in tags.items() if any(tag.strip().lower() == tagname for tag in taglist)]
+
+    image_files = sorted(filtered_files, key=lambda x: os.path.getmtime(os.path.join(upload_folder, x)), reverse=True)
+
+    images = []
+    for file in image_files:
+        ext = file.rsplit(".", 1)[-1].lower()
+        image_data = {
+            "filename": file,
+            "description": descriptions.get(file, ""),
+            "album": albums.get(file, ""),
+            "comments": comments.get(file, []),
+            "tags": tags.get(file, []),
+            "type": "video" if ext in {"mp4", "mov", "avi", "mkv"} else "image",
+            "thumb": f"thumbnails/{file.rsplit('.', 1)[0]}.jpg" if ext in {"mp4", "mov", "avi", "mkv"} else None,
+        }
+        images.append(image_data)
+
+    return render_template("gallery.html", images=images, descriptions=descriptions, albums=albums, tags=tags, filter=tagname)
+
 @main.route("/delete/<filename>", methods=["POST"])
 def delete_image(filename):
     upload_folder = current_app.config["UPLOAD_FOLDER"]
