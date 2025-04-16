@@ -14,7 +14,8 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "bmp", "webp", "heic", "mp4",
 DESCRIPTION_FILE = "descriptions.json"
 ALBUM_FILE = "albums.json"
 COMMENTS_FILE = "comments.json"
-THUMB_FOLDER = os.path.join("app", "static", "thumbnails")  # Updated path for Render
+TAGS_FILE = "tags.json"
+THUMB_FOLDER = os.path.join("app", "static", "thumbnails")
 
 os.makedirs(THUMB_FOLDER, exist_ok=True)
 
@@ -50,6 +51,7 @@ def index():
     descriptions = load_json(DESCRIPTION_FILE)
     albums = load_json(ALBUM_FILE)
     comments = load_json(COMMENTS_FILE)
+    tags = load_json(TAGS_FILE)
 
     image_files = os.listdir(upload_folder)
     image_files.sort(key=lambda x: os.path.getmtime(os.path.join(upload_folder, x)), reverse=True)
@@ -61,22 +63,25 @@ def index():
             "filename": file,
             "description": descriptions.get(file, ""),
             "album": albums.get(file, ""),
+            "comments": comments.get(file, []),
+            "tags": tags.get(file, []),
             "type": "video" if ext in {"mp4", "mov", "avi", "mkv"} else "image",
             "thumb": f"thumbnails/{file.rsplit('.', 1)[0]}.jpg" if ext in {"mp4", "mov", "avi", "mkv"} else None,
-            "comments": comments.get(file, [])
         }
         images.append(image_data)
 
-    return render_template("gallery.html", images=images, descriptions=descriptions, albums=albums)
+    return render_template("gallery.html", images=images, descriptions=descriptions, albums=albums, tags=tags)
 
 @main.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
         files = request.files.getlist("photos")
         album = request.form.get("album")
+
         descriptions = load_json(DESCRIPTION_FILE)
         albums = load_json(ALBUM_FILE)
         comments = load_json(COMMENTS_FILE)
+        tags = load_json(TAGS_FILE)
 
         for file in files:
             if file and allowed_file(file.filename):
@@ -99,7 +104,6 @@ def upload():
                 else:
                     file.save(save_path)
 
-                # ✅ Ensure thumbnails folder and generate thumbnail
                 if ext in {"mp4", "mov", "avi", "mkv"}:
                     os.makedirs(THUMB_FOLDER, exist_ok=True)
                     thumb_filename = f"{filename.rsplit('.', 1)[0]}.jpg"
@@ -114,14 +118,33 @@ def upload():
 
                 descriptions[filename] = ""
                 comments[filename] = []
+                tags[filename] = []
 
         save_json(DESCRIPTION_FILE, descriptions)
         save_json(ALBUM_FILE, albums)
         save_json(COMMENTS_FILE, comments)
+        save_json(TAGS_FILE, tags)
+
         flash("Upload successful.")
         return redirect(url_for("main.index"))
 
     return render_template("upload.html")
+
+@main.route("/add_tag/<filename>", methods=["POST"])
+def add_tag(filename):
+    tags = load_json(TAGS_FILE)
+    new_tag = request.form.get("tag", "").strip()
+    if new_tag:
+        tags.setdefault(filename, [])
+        if new_tag not in tags[filename]:
+            tags[filename].append(new_tag)
+            save_json(TAGS_FILE, tags)
+            flash(f"Tag '{new_tag}' added.")
+        else:
+            flash(f"Tag '{new_tag}' already exists.")
+    else:
+        flash("Empty tag not added.")
+    return redirect(url_for("main.index"))
 
 @main.route("/delete/<filename>", methods=["POST"])
 def delete_image(filename):
@@ -132,12 +155,14 @@ def delete_image(filename):
     descriptions = load_json(DESCRIPTION_FILE)
     albums = load_json(ALBUM_FILE)
     comments = load_json(COMMENTS_FILE)
+    tags = load_json(TAGS_FILE)
 
     if os.path.exists(file_path):
         os.remove(file_path)
         descriptions.pop(filename, None)
         albums.pop(filename, None)
         comments.pop(filename, None)
+        tags.pop(filename, None)
         if os.path.exists(thumb_path):
             os.remove(thumb_path)
         flash(f"{filename} deleted.")
@@ -147,6 +172,7 @@ def delete_image(filename):
     save_json(DESCRIPTION_FILE, descriptions)
     save_json(ALBUM_FILE, albums)
     save_json(COMMENTS_FILE, comments)
+    save_json(TAGS_FILE, tags)
     return redirect(url_for("main.index"))
 
 @main.route("/download/<filename>")
@@ -168,9 +194,7 @@ def add_comment(filename):
     comments = load_json(COMMENTS_FILE)
     new_comment = request.form.get("comment", "").strip()
     if new_comment:
-        if filename not in comments:
-            comments[filename] = []
-        comments[filename].append(new_comment)
+        comments.setdefault(filename, []).append(new_comment)
         save_json(COMMENTS_FILE, comments)
         flash("Comment added.")
     else:
