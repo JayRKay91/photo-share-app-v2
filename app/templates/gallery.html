@@ -31,9 +31,8 @@
             font-size: 0.9em;
         }
 
-        /* Preview overlay styling */
         #preview {
-            display: none; /* ✅ Start hidden */
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -72,6 +71,24 @@
             height: auto;
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
+
+        .video-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 50%;
+            padding: 10px 15px;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -92,9 +109,12 @@
         {% for image in images %}
         <div class="gallery-item">
             {% if image.type == 'video' %}
-                <img src="{{ url_for('static', filename=image.thumb) }}"
-                     onclick="openPreview('{{ url_for('static', filename='uploads/' + image.filename) }}', true)"
-                     alt="{{ image.filename }}">
+                <div class="video-wrapper">
+                    <img src="{{ url_for('static', filename=image.thumb) }}"
+                         onclick="openPreview('{{ url_for('static', filename='uploads/' + image.filename) }}', true)"
+                         alt="{{ image.filename }}">
+                    <div class="play-overlay">&#9658;</div>
+                </div>
             {% else %}
                 <img src="{{ url_for('static', filename='uploads/' + image.filename) }}"
                      onclick="openPreview(this.src)"
@@ -124,7 +144,6 @@
         {% endfor %}
     </div>
 
-    <!-- Preview overlay -->
     <div id="preview" onclick="closePreview()"></div>
 
     <script>
@@ -162,7 +181,7 @@
 
             preview.innerHTML = '';
             preview.appendChild(previewBox);
-            preview.style.display = 'flex'; // Show overlay when clicked
+            preview.style.display = 'flex';
         }
 
         function closePreview() {
