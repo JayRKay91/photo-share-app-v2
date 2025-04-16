@@ -53,24 +53,33 @@ def index():
     comments = load_json(COMMENTS_FILE)
     tags = load_json(TAGS_FILE)
 
+    tag_filter = request.args.get("tag", "").lower()
+
     image_files = os.listdir(upload_folder)
     image_files.sort(key=lambda x: os.path.getmtime(os.path.join(upload_folder, x)), reverse=True)
 
     images = []
     for file in image_files:
         ext = file.rsplit(".", 1)[-1].lower()
+        file_tags = tags.get(file, [])
+        lowercase_tags = [t.lower() for t in file_tags]
+
+        if tag_filter and tag_filter not in lowercase_tags:
+            continue  # Skip files that don't match the tag filter
+
         image_data = {
             "filename": file,
             "description": descriptions.get(file, ""),
             "album": albums.get(file, ""),
             "comments": comments.get(file, []),
-            "tags": tags.get(file, []),
+            "tags": file_tags,
             "type": "video" if ext in {"mp4", "mov", "avi", "mkv"} else "image",
             "thumb": f"thumbnails/{file.rsplit('.', 1)[0]}.jpg" if ext in {"mp4", "mov", "avi", "mkv"} else None,
         }
         images.append(image_data)
 
     return render_template("gallery.html", images=images, descriptions=descriptions, albums=albums, tags=tags)
+
 
 @main.route("/upload", methods=["GET", "POST"])
 def upload():
