@@ -165,8 +165,7 @@
                         <form action="{{ url_for('main.remove_tag', filename=image.filename, tag=tag) }}" method="POST" style="display:inline;">
                             <button type="submit">❌</button>
                         </form>
-                        <form class="rename-tag-form" action="{{ url_for('main.rename_tag_single') }}" method="POST" style="display:inline;">
-                            <input type="hidden" name="filename" value="{{ image.filename }}">
+                        <form class="rename-tag-form" action="{{ url_for('main.rename_tag_for_image', filename=image.filename) }}" method="POST" style="display:inline;">
                             <input type="hidden" name="old_tag" value="{{ tag }}">
                             <input type="text" name="new_tag" placeholder="Rename tag" maxlength="30">
                             <button type="submit">✏️</button>
