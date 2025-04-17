@@ -69,10 +69,12 @@ def index():
             continue
 
         if search_query:
-            matches_description = search_query in descriptions.get(file, "").lower()
-            matches_tags = any(search_query in t.lower() for t in file_tags)
-            matches_filename = search_query in file.lower()
-            if not (matches_description or matches_tags or matches_filename):
+            if not (
+                search_query in file.lower() or
+                search_query in descriptions.get(file, "").lower() or
+                search_query in albums.get(file, "").lower() or
+                any(search_query in tag.lower() for tag in file_tags)
+            ):
                 continue
 
         image_data = {
@@ -86,8 +88,7 @@ def index():
         }
         images.append(image_data)
 
-    # Unique tags list for sidebar
-    all_tags = sorted(set(tag for tag_list in tags.values() for tag in tag_list), key=str.lower)
+    all_tags = sorted(set(tag for taglist in tags.values() for tag in taglist), key=str.lower)
 
     return render_template(
         "gallery.html",
