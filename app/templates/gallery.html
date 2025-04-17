@@ -91,6 +91,16 @@
             padding: 10px;
             border-left: 4px solid #2196F3;
         }
+        .rename-tag-form {
+            display: inline;
+        }
+        .rename-tag-form input {
+            width: 80px;
+            font-size: 0.8em;
+        }
+        .rename-tag-form button {
+            font-size: 0.8em;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +123,13 @@
         </ul>
       {% endif %}
     {% endwith %}
+
+    <h3>Rename Tag Across All Images</h3>
+    <form action="{{ url_for('main.rename_tag_global') }}" method="POST">
+        <input type="text" name="old_tag" placeholder="Old tag" required>
+        <input type="text" name="new_tag" placeholder="New tag" required>
+        <button type="submit">Rename Globally</button>
+    </form>
 
     <div class="gallery-grid">
         {% for image in images %}
@@ -142,9 +159,19 @@
 
             <div class="tags">
                 {% if image.tags %}
-                    <strong>Tags:</strong>
+                    <strong>Tags:</strong><br>
                     {% for tag in image.tags %}
                         <a href="{{ url_for('main.index', tag=tag|lower) }}" class="tag">📌 {{ tag }}</a>
+                        <form action="{{ url_for('main.remove_tag', filename=image.filename, tag=tag) }}" method="POST" style="display:inline;">
+                            <button type="submit">❌</button>
+                        </form>
+                        <form class="rename-tag-form" action="{{ url_for('main.rename_tag_single') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="filename" value="{{ image.filename }}">
+                            <input type="hidden" name="old_tag" value="{{ tag }}">
+                            <input type="text" name="new_tag" placeholder="Rename tag" maxlength="30">
+                            <button type="submit">✏️</button>
+                        </form>
+                        <br>
                     {% endfor %}
                 {% endif %}
                 <form action="{{ url_for('main.add_tag', filename=image.filename) }}" method="POST" style="margin-top: 5px;">
