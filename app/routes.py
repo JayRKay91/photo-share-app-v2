@@ -1,5 +1,3 @@
-# ... (all previous imports and configuration remain exactly the same) ...
-
 import os
 import json
 import uuid
@@ -18,6 +16,7 @@ ALBUM_FILE = "albums.json"
 COMMENTS_FILE = "comments.json"
 TAGS_FILE = "tags.json"
 THUMB_FOLDER = os.path.join("app", "static", "thumbnails")
+
 os.makedirs(THUMB_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
@@ -158,8 +157,7 @@ def add_tag(filename):
 def remove_tag(filename, tag):
     tags = load_json(TAGS_FILE)
     if filename in tags:
-        updated = [t for t in tags[filename] if t.lower() != tag.lower()]
-        tags[filename] = updated
+        tags[filename] = [t for t in tags[filename] if t.lower() != tag.lower()]
         save_json(TAGS_FILE, tags)
         flash(f"Tag '{tag}' removed.")
     return redirect(url_for("main.index"))
@@ -171,17 +169,14 @@ def rename_tag_single():
     new_tag = request.form.get("new_tag", "").strip()
 
     tags = load_json(TAGS_FILE)
-
     if not filename or not old_tag or not new_tag:
-        flash("Missing information for tag rename.")
+        flash("Missing tag rename data.")
         return redirect(url_for("main.index"))
 
     if filename in tags:
-        updated_tags = [new_tag if t.lower() == old_tag else t for t in tags[filename]]
-        tags[filename] = updated_tags
+        tags[filename] = [new_tag if t.lower() == old_tag else t for t in tags[filename]]
         save_json(TAGS_FILE, tags)
         flash(f"Renamed tag '{old_tag}' to '{new_tag}' for {filename}.")
-
     return redirect(url_for("main.index"))
 
 @main.route("/rename_tag_global", methods=["POST"])
@@ -191,30 +186,26 @@ def rename_tag_global():
     new_tag = request.form.get("new_tag", "").strip()
 
     if not old_tag or not new_tag:
-        flash("Both old and new tag names must be provided.")
+        flash("Missing tag rename data.")
         return redirect(url_for("main.index"))
 
     updated = False
-    for filename, taglist in tags.items():
-        updated_tags = []
-        changed = False
-        for tag in taglist:
-            if tag.strip().lower() == old_tag:
-                updated_tags.append(new_tag)
-                changed = True
-            else:
-                updated_tags.append(tag)
-        if changed:
-            tags[filename] = updated_tags
+    for filename in tags:
+        new_tags = [new_tag if t.lower() == old_tag else t for t in tags[filename]]
+        if new_tags != tags[filename]:
+            tags[filename] = new_tags
             updated = True
 
     if updated:
         save_json(TAGS_FILE, tags)
-        flash(f"Tag '{old_tag}' renamed to '{new_tag}' across the gallery.")
+        flash(f"Renamed '{old_tag}' to '{new_tag}' globally.")
     else:
-        flash(f"No tags found matching '{old_tag}'.")
-
+        flash(f"No matches found for '{old_tag}'.")
     return redirect(url_for("main.index"))
+
+@main.route("/tag/<tagname>")
+def filter_by_tag(tagname):
+    return redirect(url_for("main.index", tag=tagname))
 
 @main.route("/delete/<filename>", methods=["POST"])
 def delete_image(filename):
