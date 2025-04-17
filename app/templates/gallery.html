@@ -18,11 +18,9 @@
             height: auto;
             cursor: pointer;
         }
-
         .action-buttons {
             margin-top: 10px;
         }
-
         #preview {
             display: none;
             position: fixed;
@@ -38,12 +36,10 @@
             box-sizing: border-box;
             cursor: pointer;
         }
-
         .preview-box {
             position: relative;
             cursor: auto;
         }
-
         .close-btn {
             position: absolute;
             top: 10px;
@@ -55,7 +51,6 @@
             cursor: pointer;
             border-radius: 4px;
         }
-
         .preview-content {
             max-width: 90vw;
             max-height: 90vh;
@@ -63,12 +58,10 @@
             height: auto;
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
-
         .video-wrapper {
             position: relative;
             display: inline-block;
         }
-
         .play-overlay {
             position: absolute;
             top: 50%;
@@ -81,12 +74,10 @@
             padding: 10px 15px;
             pointer-events: none;
         }
-
         .tags {
             margin-top: 8px;
             font-size: 0.9em;
         }
-
         .tag {
             display: inline-block;
             background-color: #e0e0e0;
@@ -94,11 +85,24 @@
             padding: 2px 6px;
             margin: 2px;
         }
+        .filter-info {
+            margin: 10px 0;
+            background-color: #f3f3f3;
+            padding: 10px;
+            border-left: 4px solid #2196F3;
+        }
     </style>
 </head>
 <body>
     <h1>Photo Gallery</h1>
     <a href="{{ url_for('main.upload') }}">Upload New Photo</a>
+
+    {% if request.args.get('tag') %}
+    <div class="filter-info">
+        <strong>Filtering by tag:</strong> "{{ request.args.get('tag') }}"<br>
+        <a href="{{ url_for('main.index') }}">🔄 Clear Filter</a>
+    </div>
+    {% endif %}
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
@@ -171,12 +175,9 @@
     <script>
         function openPreview(src, isVideo = false) {
             const preview = document.getElementById('preview');
-
             const previewBox = document.createElement('div');
             previewBox.className = 'preview-box';
-            previewBox.onclick = function(e) {
-                e.stopPropagation();
-            };
+            previewBox.onclick = function(e) { e.stopPropagation(); };
 
             let content;
             if (isVideo) {
@@ -194,13 +195,10 @@
             const closeButton = document.createElement('button');
             closeButton.className = 'close-btn';
             closeButton.textContent = 'X';
-            closeButton.onclick = function() {
-                closePreview();
-            };
+            closeButton.onclick = function() { closePreview(); };
 
             previewBox.appendChild(content);
             previewBox.appendChild(closeButton);
-
             preview.innerHTML = '';
             preview.appendChild(previewBox);
             preview.style.display = 'flex';
@@ -217,7 +215,6 @@
             link.href = fallbackUrl;
             link.textContent = filename;
             link.target = "_blank";
-
             const parent = imgElement.parentNode;
             parent.replaceChild(link, imgElement);
         }
