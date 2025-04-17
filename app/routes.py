@@ -54,6 +54,7 @@ def index():
     tags = load_json(TAGS_FILE)
 
     tag_filter = request.args.get("tag", "").lower()
+    search_query = request.args.get("search", "").lower()
 
     image_files = os.listdir(upload_folder)
     image_files.sort(key=lambda x: os.path.getmtime(os.path.join(upload_folder, x)), reverse=True)
@@ -67,6 +68,13 @@ def index():
         if tag_filter and tag_filter not in lowercase_tags:
             continue
 
+        if search_query:
+            matches_description = search_query in descriptions.get(file, "").lower()
+            matches_tags = any(search_query in t.lower() for t in file_tags)
+            matches_filename = search_query in file.lower()
+            if not (matches_description or matches_tags or matches_filename):
+                continue
+
         image_data = {
             "filename": file,
             "description": descriptions.get(file, ""),
@@ -78,7 +86,19 @@ def index():
         }
         images.append(image_data)
 
-    return render_template("gallery.html", images=images, descriptions=descriptions, albums=albums, tags=tags)
+    # Unique tags list for sidebar
+    all_tags = sorted(set(tag for tag_list in tags.values() for tag in tag_list), key=str.lower)
+
+    return render_template(
+        "gallery.html",
+        images=images,
+        descriptions=descriptions,
+        albums=albums,
+        tags=tags,
+        all_tags=all_tags,
+        current_tag=tag_filter,
+        search_query=search_query
+    )
 
 @main.route("/upload", methods=["GET", "POST"])
 def upload():
